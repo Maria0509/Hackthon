@@ -5,7 +5,9 @@ for(const [limit,total,pending]of [[120,270,0],[60,240,30]]){const p=planner.sch
 assert.throws(()=>planner.prepareSelection(['inventado'],[]));assert.equal(planner.prepareSelection(['F04'],[]).join(','),'F01,F02,F04');assert.equal(planner.schedule(['F15'],['feedback'],30,4).remaining.F15,60);
 const gemini=load('lib/gemini-models.ts');
 const serverConfig=load('lib/server-config.ts');
-const deps={'../../../lib/planner':planner,'../../../lib/gemini-models':gemini,'../../../lib/server-config':serverConfig};
+const fakeAccount={token:'test-user-token',user:{id:'11111111-1111-1111-1111-111111111111'},profile:{role:'colaborador'}};
+const authMock={requireSession:async()=>fakeAccount,database:async()=>[{id:'test-plan-id'}],failure:e=>Response.json({error:e.message},{status:e.status||500})};
+const deps={'../../../lib/auth':authMock,'../../../lib/planner':planner,'../../../lib/gemini-models':gemini,'../../../lib/server-config':serverConfig};
 const {POST}=load('app/api/recommend/route.ts',deps),{POST:modelsPOST}=load('app/api/models/route.ts',deps);
 process.env.GEMINI_API_KEY='test-only-no-real-credential';
 const payload={apiKey:'test-only-no-real-credential',role:'Assistente',goal:'Analisar dados',known:['excel_basico'],details:'Não sei limpar dados ou criar dashboards',limit:60,weeks:4};
@@ -30,6 +32,7 @@ function mock(generate){global.fetch=async(url,opts)=>{assert.equal(opts.headers
   mock(async()=>Response.json({candidates:[{content:{parts:[{text:JSON.stringify({supported:false,message:'Não existe Power BI.',gaps:[],questions:[],recommendations:[],alternatives:[{id:'F04',similarity:'Visualização de dados e dashboards',limitations:'Usa Excel, não ensina Power BI'}]})}]}}]}));
   const alternative=await(await POST(req({...payload,goal:'Aprender Power BI'}))).json();assert.equal(alternative.analysis.alternatives[0].id,'F04');assert.equal(alternative.ids.length,0);assert.equal(alternative.rows.length,0);
   mock(async()=>Response.json({candidates:[{content:{parts:[{text:JSON.stringify({supported:false,message:'Ausente',gaps:[],questions:[],recommendations:[],alternatives:[{id:'inventado',similarity:'x',limitations:'x'}]})}]}}]}));assert.equal((await POST(req())).status,502);
-  const saved=process.env.GEMINI_API_KEY;delete process.env.GEMINI_API_KEY;assert.equal((await POST(req())).status,503);process.env.GEMINI_API_KEY=saved;process.env.APP_ACCESS_CODE='test-access';assert.equal((await modelsPOST(req())).status,401);delete process.env.APP_ACCESS_CODE;
+  const saved=process.env.GEMINI_API_KEY;delete process.env.GEMINI_API_KEY;assert.equal((await POST(req())).status,503);process.env.GEMINI_API_KEY=saved;const validAuth=authMock.requireSession;authMock.requireSession=async()=>{const e=new Error('Inicia sessão');e.name='AppError';e.status=401;throw e;};assert.equal((await modelsPOST(req())).status,401);assert.equal((await POST(req())).status,401);authMock.requireSession=validAuth;
   console.log('PASS: model discovery/ranking/filtering/pagination; removed model; invalid key distinct from 404 and 429; endpoint success; catalog rejection; schedules; no credential disclosure.');
 })().catch(e=>{console.error(e);process.exitCode=1;});
+
