@@ -10,7 +10,7 @@
     "dev": "next dev",
     "build": "next build --webpack",
     "start": "next start",
-    "test": "node scripts/test-planner.cjs",
+    "test": "node scripts/test-planner.cjs && node scripts/test-auth.cjs",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

@@ -1,4 +1,5 @@
-import { authorize, getGeminiKey } from '../../../lib/server-config';
+import { database, failure, requireSession } from '../../../lib/auth';
+import { getGeminiKey } from '../../../lib/server-config';
 export const runtime = 'nodejs';
 export const maxDuration = 60;
 import { GeminiError, listModels, providerError } from '../../../lib/gemini-models';
@@ -12,12 +13,12 @@ const schema={type:'object',properties:{
 },required:['supported','message','gaps','questions','recommendations','alternatives'],additionalProperties:false};
 const json=(data:unknown,status=200)=>Response.json(data,{status,headers:{'Cache-Control':'no-store'}});
 export async function POST(request:Request){
-  const denied=authorize(request);if(denied)return denied;
   const origin=request.headers.get('origin');
   if(origin&&origin!==new URL(request.url).origin)return json({error:'Origem não autorizada.'},403);
-  // Optional shared access code is enforced on the server by authorize().
+  // Every request is authenticated; the database also enforces per-user access.
   if(Number(request.headers.get('content-length')||0)>16000)return json({error:'Pedido demasiado grande.'},413);
   try{
+    const account=await requireSession();
     const raw=await request.text();
     if(raw.length>16000)return json({error:'Pedido demasiado grande.'},413);
     const body=JSON.parse(raw);
@@ -52,8 +53,17 @@ export async function POST(request:Request){
     if(new Set(recommendations.map(r=>r.id)).size!==recommendations.length)return json({error:'A IA devolveu formações duplicadas. Tenta novamente.'},502);
     const ids=prepareSelection(recommendations.map(r=>r.id),known);
     const plan=schedule(ids,known,limit,weeks);
-    return json({mode:'gemini',model,analysis:{alternatives:ai.alternatives.map((a:any)=>({id:a.id,similarity:a.similarity.slice(0,1500),limitations:a.limitations.slice(0,1500)})),supported:ai.supported,message:ai.message.slice(0,3000),gaps:ai.gaps.slice(0,20),questions:ai.questions.slice(0,5)},ids,reasons:Object.fromEntries(recommendations.map(r=>[r.id,r.reason.slice(0,1500)])),...plan});
+    let savedPlanId:string|null=null;
+    let saveWarning:string|null=null;
+    if(ai.supported&&!ai.questions.length&&ids.length){
+      try {
+        const saved=await database(account,'learning_plans',{method:'POST',body:{user_id:account.user.id,goal,plan:{model,analysis:ai,ids,...plan,reasons:Object.fromEntries(recommendations.map(r=>[r.id,r.reason.slice(0,1500)]))},total_minutes:plan.totals.reduce((a,b)=>a+b,0),pending_minutes:Object.values(plan.remaining).reduce((a,b)=>a+b,0),status:'active'}});
+        savedPlanId=saved[0].id;
+      } catch {saveWarning='O plano foi gerado, mas não foi possível guardá-lo. Guarda uma cópia e tenta novamente.';}
+    }
+    return json({savedPlanId,saveWarning,mode:'gemini',model,analysis:{alternatives:ai.alternatives.map((a:any)=>({id:a.id,similarity:a.similarity.slice(0,1500),limitations:a.limitations.slice(0,1500)})),supported:ai.supported,message:ai.message.slice(0,3000),gaps:ai.gaps.slice(0,20),questions:ai.questions.slice(0,5)},ids,reasons:Object.fromEntries(recommendations.map(r=>[r.id,r.reason.slice(0,1500)])),...plan});
   }catch(e){
+    if(e instanceof Error&&e.name==='AppError')return failure(e);
     if(e instanceof GeminiError)return json({error:e.message,code:e.code,providerStatus:e.status},e.status===429?429:502);
     if(e instanceof SyntaxError)return json({error:'Pedido JSON inválido.'},400);
     if(e instanceof Error&&(e.name==='TimeoutError'||e.name==='AbortError'))return json({error:'O Gemini demorou demasiado. Tenta novamente.'},504);
@@ -61,3 +71,4 @@ export async function POST(request:Request){
     return json({error:'Não foi possível gerar o plano. Verifica os dados e tenta novamente.'},500);
   }
 }
+

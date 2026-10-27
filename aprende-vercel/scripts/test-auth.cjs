@@ -1,0 +1,30 @@
+const fs=require('fs'),vm=require('vm'),ts=require('typescript'),assert=require('node:assert/strict');
+function load(file,deps={}){const code=ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022,esModuleInterop:true}}).outputText;const module={exports:{}};vm.runInNewContext(code,{module,exports:module.exports,require:p=>deps[p]||require(p),Response,Request,URL,AbortSignal,Buffer,process,fetch:(...a)=>global.fetch(...a),Set,Map,Error,SyntaxError,console});return module.exports;}
+const jar=new Map();const fakeCookies={get:k=>jar.has(k)?{value:jar.get(k)}:undefined,set:(k,v,o)=>{jar.set(k,v);assert.equal(o.httpOnly,true);assert.equal(o.sameSite,'lax');},delete:k=>jar.delete(k)};
+const auth=load('lib/auth.ts',{'next/headers':{cookies:async()=>fakeCookies}});
+const id='11111111-1111-1111-1111-111111111111';
+const user={id,email:'colaborador@example.test'};const profile={...user,full_name:'Colaborador',role:'colaborador'};
+const request=(path,body,headers={})=>new Request('https://app.test'+path,{method:'POST',headers:{'Content-Type':'application/json',Origin:'https://app.test',...headers},body:JSON.stringify(body)});
+(async()=>{
+ const original={SUPABASE_URL:process.env.SUPABASE_URL,SUPABASE_ANON_KEY:process.env.SUPABASE_ANON_KEY,REGISTRATION_CODE:process.env.REGISTRATION_CODE};
+ try{
+  delete process.env.SUPABASE_URL;delete process.env.SUPABASE_ANON_KEY;assert.throws(()=>auth.configuration(),e=>e.status===503);
+  process.env.SUPABASE_URL='https://supabase.example.test';process.env.SUPABASE_ANON_KEY='test-public-project-key';
+  assert.throws(()=>auth.requireHR({profile}),e=>e.status===403);auth.requireHR({profile:{role:'rh'}});
+  const sanitized=auth.validateProfile({full_name:'Ana',weekly_minutes:60,known_skills:[],role:'rh',id:'attacker',email:'other@test.com'});assert.equal(sanitized.role,undefined);assert.equal(sanitized.id,undefined);assert.equal(sanitized.email,undefined);
+  assert.throws(()=>auth.sameOrigin(request('/api/profile',{}, {Origin:'https://evil.test'})),e=>e.status===403);
+  await assert.rejects(()=>auth.requireSession(),e=>e.status===401);
+  let identityRequests=0;global.fetch=async(url,options)=>{if(url.endsWith('/auth/v1/user')){identityRequests++;assert.equal(options.headers.Authorization,'Bearer access');return Response.json(user);}if(url.includes('/rest/v1/profiles?id=eq.'+id))return Response.json([profile]);throw Error('Unexpected request '+url);};
+  await auth.setSession({access_token:'access',refresh_token:'refresh',expires_in:3600});const session=await auth.requireSession();assert.equal(session.profile.role,'colaborador');assert.equal(identityRequests,1);
+  jar.set('aprende_access','expired');global.fetch=async(url,options)=>{if(url.endsWith('/auth/v1/user'))return Response.json({},{status:401});if(url.includes('grant_type=refresh_token'))return Response.json({access_token:'fresh',refresh_token:'fresh-refresh',expires_in:3600,user});if(url.includes('/rest/v1/profiles?'))return Response.json([profile]);throw Error('Unexpected');};assert.equal((await auth.requireSession()).token,'fresh');assert.equal(jar.get('aprende_access'),'fresh');
+  const {POST}=load('app/api/auth/[action]/route.ts',{'../../../../lib/auth':auth});let signupBody;global.fetch=async(url,options)=>{assert(url.endsWith('/auth/v1/signup'));signupBody=JSON.parse(options.body);return Response.json({user});};
+  const registration=await POST(request('/api/auth/register',{email:user.email,password:'test-password-only',full_name:'Ana',role:'rh'}),{params:Promise.resolve({action:'register'})});assert.equal(registration.status,200);assert.equal(signupBody.data.role,undefined);assert(!JSON.stringify(await registration.json()).includes('test-password-only'));
+  process.env.REGISTRATION_CODE='invite-only';assert.equal((await POST(request('/api/auth/register',{email:user.email,password:'test-password-only',full_name:'Ana'}),{params:Promise.resolve({action:'register'})})).status,403);
+  const authMock={...auth,requireSession:async()=>({token:'token',user,profile})};const hr=load('app/api/hr/route.ts',{'../../../lib/auth':authMock});assert.equal((await hr.GET(new Request('https://app.test/api/hr'))).status,403);
+  authMock.requireSession=async()=>({token:'token',user,profile:{...profile,role:'rh'}});authMock.database=async(s,path)=>path.startsWith('profiles')?[{...profile,role:'colaborador'}]:[{id:'plan',user_id:id,status:'active',total_minutes:240,pending_minutes:30,created_at:'2026-10-27'}];const report=await(await hr.GET(new Request('https://app.test/api/hr'))).json();assert.equal(report.summary.total,1);assert.equal(report.summary.with_plan,1);assert.equal(report.summary.without_plan,0);
+  const planQueries=[];const plans=load('app/api/plans/route.ts',{'../../../lib/auth':{...auth,requireSession:async()=>({token:'token',user,profile}),database:async(s,path)=>{planQueries.push(path);return [];}}});await plans.GET();assert(planQueries[0].includes('user_id=eq.'+id));const update=await plans.PATCH(new Request('https://app.test/api/plans',{method:'PATCH',headers:{Origin:'https://app.test','Content-Type':'application/json'},body:JSON.stringify({id:'22222222-2222-2222-2222-222222222222',status:'completed',user_id:'attacker'})}));assert.equal(update.status,404);assert(planQueries[1].includes('user_id=eq.'+id));
+  const sql=fs.readFileSync('supabase/schema.sql','utf8');assert(sql.includes('enable row level security'));assert(!/grant update\([^)]*role/.test(sql));assert(sql.includes("'colaborador') on conflict"));
+  await auth.clearSession();assert.equal(jar.size,0);
+  console.log('PASS: login authorization; HTTP-only cookies; session refresh; server role checks; no signup privilege escalation; protected HR metrics; plan ownership filters; profile field whitelist; registration code; SQL privilege assertions. Supabase calls mocked.');
+ }finally{for(const [k,v]of Object.entries(original)){if(v===undefined)delete process.env[k];else process.env[k]=v;}}
+})().catch(e=>{console.error(e);process.exitCode=1;});
