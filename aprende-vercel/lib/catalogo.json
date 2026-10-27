@@ -1,0 +1,244 @@
+{
+  "formacoes": [
+    {
+      "id": "F01",
+      "titulo": "Excel: primeiros passos",
+      "tema": "Dados",
+      "competencias": [
+        "excel_basico"
+      ],
+      "duracao_minutos": 60,
+      "nivel": "iniciante",
+      "formato": "curso",
+      "pre_requisitos": [],
+      "divisivel": true,
+      "bloco_minimo_minutos": 30,
+      "avaliacao": "Criar uma tabela com fórmulas de soma e média."
+    },
+    {
+      "id": "F02",
+      "titulo": "Organizar e limpar dados",
+      "tema": "Dados",
+      "competencias": [
+        "limpeza_dados"
+      ],
+      "duracao_minutos": 90,
+      "nivel": "basico",
+      "formato": "pratica",
+      "pre_requisitos": [
+        "excel_basico"
+      ],
+      "divisivel": true,
+      "bloco_minimo_minutos": 30,
+      "avaliacao": "Corrigir valores em falta, formatos inconsistentes e duplicados numa tabela."
+    },
+    {
+      "id": "F03",
+      "titulo": "Interpretar indicadores de negócio",
+      "tema": "Dados",
+      "competencias": [
+        "interpretacao_indicadores"
+      ],
+      "duracao_minutos": 60,
+      "nivel": "basico",
+      "formato": "leitura",
+      "pre_requisitos": [],
+      "divisivel": true,
+      "bloco_minimo_minutos": 30,
+      "avaliacao": "Interpretar três indicadores e explicar uma limitação de cada um."
+    },
+    {
+      "id": "F04",
+      "titulo": "Criar um dashboard em Excel",
+      "tema": "Dados",
+      "competencias": [
+        "visualizacao_dados"
+      ],
+      "duracao_minutos": 120,
+      "nivel": "intermedio",
+      "formato": "pratica",
+      "pre_requisitos": [
+        "excel_basico",
+        "limpeza_dados"
+      ],
+      "divisivel": true,
+      "bloco_minimo_minutos": 30,
+      "avaliacao": "Construir um dashboard com dois gráficos e três indicadores."
+    },
+    {
+      "id": "F05",
+      "titulo": "Introdução à inteligência artificial",
+      "tema": "Inteligência artificial",
+      "competencias": [
+        "literacia_ia"
+      ],
+      "duracao_minutos": 60,
+      "nivel": "iniciante",
+      "formato": "curso",
+      "pre_requisitos": [],
+      "divisivel": true,
+      "bloco_minimo_minutos": 30,
+      "avaliacao": "Identificar três aplicações de IA e duas limitações."
+    },
+    {
+      "id": "F06",
+      "titulo": "Escrever instruções claras para IA",
+      "tema": "Inteligência artificial",
+      "competencias": [
+        "escrita_prompts"
+      ],
+      "duracao_minutos": 90,
+      "nivel": "basico",
+      "formato": "pratica",
+      "pre_requisitos": [
+        "literacia_ia"
+      ],
+      "divisivel": true,
+      "bloco_minimo_minutos": 30,
+      "avaliacao": "Criar e melhorar três prompts com contexto, objetivo e formato de resposta."
+    },
+    {
+      "id": "F07",
+      "titulo": "Verificar respostas de IA",
+      "tema": "Inteligência artificial",
+      "competencias": [
+        "avaliacao_critica_ia"
+      ],
+      "duracao_minutos": 60,
+      "nivel": "basico",
+      "formato": "pratica",
+      "pre_requisitos": [
+        "literacia_ia"
+      ],
+      "divisivel": true,
+      "bloco_minimo_minutos": 30,
+      "avaliacao": "Detetar erros em respostas de exemplo e explicar como verificar as afirmações."
+    },
+    {
+      "id": "F08",
+      "titulo": "Proteção de informação ao utilizar IA",
+      "tema": "Inteligência artificial",
+      "competencias": [
+        "protecao_informacao_ia"
+      ],
+      "duracao_minutos": 30,
+      "nivel": "basico",
+      "formato": "leitura",
+      "pre_requisitos": [],
+      "divisivel": false,
+      "bloco_minimo_minutos": 30,
+      "avaliacao": "Classificar cinco exemplos de informação e identificar quais exigem proteção."
+    },
+    {
+      "id": "F09",
+      "titulo": "Escrever emails profissionais",
+      "tema": "Comunicação",
+      "competencias": [
+        "comunicacao_escrita"
+      ],
+      "duracao_minutos": 60,
+      "nivel": "basico",
+      "formato": "pratica",
+      "pre_requisitos": [],
+      "divisivel": true,
+      "bloco_minimo_minutos": 30,
+      "avaliacao": "Reescrever dois emails com objetivo, pedido e prazo claros."
+    },
+    {
+      "id": "F10",
+      "titulo": "Apresentar ideias com clareza",
+      "tema": "Comunicação",
+      "competencias": [
+        "comunicacao_oral"
+      ],
+      "duracao_minutos": 90,
+      "nivel": "basico",
+      "formato": "pratica",
+      "pre_requisitos": [],
+      "divisivel": true,
+      "bloco_minimo_minutos": 30,
+      "avaliacao": "Preparar e realizar uma apresentação de três minutos com uma conclusão clara."
+    },
+    {
+      "id": "F11",
+      "titulo": "Comunicar conclusões com dados",
+      "tema": "Comunicação",
+      "competencias": [
+        "comunicacao_dados"
+      ],
+      "duracao_minutos": 60,
+      "nivel": "intermedio",
+      "formato": "pratica",
+      "pre_requisitos": [
+        "interpretacao_indicadores"
+      ],
+      "divisivel": true,
+      "bloco_minimo_minutos": 30,
+      "avaliacao": "Apresentar três conclusões apoiadas por indicadores, distinguindo factos de hipóteses."
+    },
+    {
+      "id": "F12",
+      "titulo": "Dar e receber feedback",
+      "tema": "Colaboração",
+      "competencias": [
+        "feedback"
+      ],
+      "duracao_minutos": 30,
+      "nivel": "basico",
+      "formato": "mentoria",
+      "pre_requisitos": [],
+      "divisivel": false,
+      "bloco_minimo_minutos": 30,
+      "avaliacao": "Praticar uma conversa de feedback com um exemplo concreto e uma ação de melhoria."
+    },
+    {
+      "id": "F13",
+      "titulo": "Priorizar tarefas e gerir o tempo",
+      "tema": "Produtividade",
+      "competencias": [
+        "gestao_tempo",
+        "priorizacao"
+      ],
+      "duracao_minutos": 60,
+      "nivel": "basico",
+      "formato": "pratica",
+      "pre_requisitos": [],
+      "divisivel": true,
+      "bloco_minimo_minutos": 30,
+      "avaliacao": "Organizar uma semana de trabalho e justificar as três tarefas prioritárias."
+    },
+    {
+      "id": "F14",
+      "titulo": "Planear um pequeno projeto",
+      "tema": "Gestão de projetos",
+      "competencias": [
+        "planeamento_projetos"
+      ],
+      "duracao_minutos": 90,
+      "nivel": "basico",
+      "formato": "curso",
+      "pre_requisitos": [],
+      "divisivel": true,
+      "bloco_minimo_minutos": 30,
+      "avaliacao": "Definir objetivo, tarefas, responsáveis, prazos e dois riscos de um projeto."
+    },
+    {
+      "id": "F15",
+      "titulo": "Primeiros passos na liderança de equipa",
+      "tema": "Liderança",
+      "competencias": [
+        "delegacao",
+        "acompanhamento_equipa"
+      ],
+      "duracao_minutos": 60,
+      "nivel": "basico",
+      "formato": "mentoria",
+      "pre_requisitos": [
+        "feedback"
+      ],
+      "divisivel": false,
+      "bloco_minimo_minutos": 60,
+      "avaliacao": "Preparar uma delegação com resultado esperado, prazo e momento de acompanhamento."
+    }
+  ]
+}
